@@ -93,14 +93,27 @@ impl Column {
         }
     }
 
+    pub unsafe fn remove(&mut self, index: usize) {
+        let new_len = self.len - 1;
+        let size = self.item_layout.size();
+        // If item removed is last then just reduce length
+        // TODO: Reduce allocated capacity
+        if index != new_len {
+            std::ptr::swap_nonoverlapping::<u8>(
+                self.get_mut(index),
+                self.get_mut(new_len),
+                size,
+            );
+        }
+        self.len = new_len;
+    }
+
     pub unsafe fn get(&self, index: usize) -> *const u8 {
-        debug_assert!(index < self.len());
         let size = self.item_layout.size();
         unsafe { self.get_ptr().byte_add(index * size) }
     }
 
     pub unsafe fn get_mut(&mut self, index: usize) -> *mut u8 {
-        debug_assert!(index < self.len());
         let size = self.item_layout.size();
         unsafe { self.get_ptr_mut().byte_add(index * size) }
     }
@@ -137,7 +150,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn can_init_column_and_read_row() {
+    fn can_init_column_and_create_row() {
         let value: u32 = 2;
 
         let layout = Layout::for_value(&value);
@@ -168,5 +181,19 @@ mod tests {
         let row_value: u32 = unsafe { (*row_ptr).into() };
 
         assert_eq!(modified_value, row_value);
+    }
+
+    #[test]
+    fn can_remove_raw() {
+        let value: u32 = 2;
+
+        let layout = Layout::for_value(&value);
+        let mut column = unsafe { Column::new(layout, 1) };
+
+        unsafe { column.push(ptr::addr_of!(value) as *const u8) };
+
+        unsafe { column.remove(0) };
+
+        assert_eq!(0, column.len());
     }
 }
