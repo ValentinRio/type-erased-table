@@ -2,6 +2,59 @@
 
 use std::{alloc::Layout, num::NonZeroUsize, ptr::NonNull};
 
+use nohash_hasher::IntMap;
+
+pub struct Table {
+    columns: IntMap<u32, Column>,
+    capacity: usize,
+}
+
+impl Table {
+    pub fn new(capacity: usize) -> Table {
+        Table {
+            columns: IntMap::default(),
+            capacity
+        }
+    }
+
+    pub fn add_column(mut self, column_info: ColumnInfo) {
+        self.columns.insert(
+            column_info.id(),
+            unsafe { Column::new(column_info.layout(), self.capacity) },
+        );
+    }
+
+    pub fn get_column(&self, column_id: u32) -> Option<&Column> {
+        self.columns.get(&column_id)
+    }
+
+    pub fn get_column_mut(&mut self, column_id: u32) -> Option<&mut Column> {
+        self.columns.get_mut(&column_id)
+    }
+}
+
+pub struct ColumnInfo {
+    id: u32,
+    layout: Layout
+}
+
+impl ColumnInfo {
+    pub fn new(id: u32, layout: Layout) -> ColumnInfo {
+        ColumnInfo {
+            id,
+            layout
+        }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn layout(&self) -> Layout {
+        self.layout
+    }
+}
+
 pub struct Column {
     item_layout: Layout,
     capacity: usize,
@@ -93,6 +146,8 @@ impl Column {
         }
     }
 
+    // Removing by replacing element at [`index`] by last element
+    // ! Be careful, ordering is not maintained
     pub unsafe fn remove(&mut self, index: usize) {
         let new_len = self.len - 1;
         let size = self.item_layout.size();
