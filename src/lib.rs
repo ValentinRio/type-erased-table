@@ -17,7 +17,7 @@ impl Table {
         }
     }
 
-    pub fn add_column(mut self, column_info: ColumnInfo) {
+    pub fn add_column(&mut self, column_info: ColumnInfo) {
         self.columns.insert(
             column_info.id(),
             unsafe { Column::new(column_info.layout(), self.capacity) },
@@ -205,7 +205,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn can_init_column_and_create_row() {
+    fn create_table() {
+        let mut table = Table::new(1);
+
+        let value: u32 = 2;
+
+        let layout = Layout::for_value(&value);
+
+        let column_info = ColumnInfo::new(1, layout);
+
+        table.add_column(column_info);
+
+        let column = table.get_column_mut(1).unwrap();
+
+        unsafe { column.push(ptr::addr_of!(value) as *const u8) }
+
+        let row_ptr = unsafe { column.get(0) };
+        let row_value: u32 = unsafe { (*row_ptr).into() };
+
+        assert_eq!(value, row_value);
+    }
+
+    #[test]
+    fn init_column_and_create_row() {
         let value: u32 = 2;
 
         let layout = Layout::for_value(&value);
@@ -220,7 +242,7 @@ mod tests {
     }
 
     #[test]
-    fn can_modify_raw() {
+    fn modify_row() {
         let value: u32 = 2;
 
         let layout = Layout::for_value(&value);
@@ -239,7 +261,7 @@ mod tests {
     }
 
     #[test]
-    fn can_remove_raw() {
+    fn remove_row() {
         let value: u32 = 2;
 
         let layout = Layout::for_value(&value);
