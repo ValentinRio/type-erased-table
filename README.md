@@ -46,8 +46,6 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Allow to create Table like structure represented by a structure of Arrays maintaining multiple arrays of different types while maintaining the same size for all the arrays and a shared index for each attribute created throughout its lifetime.
-
 Provide a Table struct that allows to store rows of data composed of different types.
 This structure can be represented as a [Structure of arrays](https://en.wikipedia.org/wiki/AoS_and_SoA) and is built has an HashMap where keys are column identifiers and values are Column. Each Column is a contiguous array and every row component can be accessed with the same index on each Column.
 
